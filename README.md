@@ -15,8 +15,8 @@ Zero flicker thanks to dirty-rect + permanent subtext + async updates
 
 ## Hardware
 - Longan Nano + CAN board
-- 3× 128×32 OLED (I2C)
-- Real car tested – 300+ km/h
+- 2× 128×32 and 1x 64x32 OLED (I2C) 
+- Real car tested – 150+ km/h
 
 ```python
 from display_manager import update_odometer_display, update_central_display, update_rnd_display
