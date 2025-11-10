@@ -14,8 +14,8 @@ Zero flicker thanks to dirty-rect + permanent subtext + async updates
 - Boot animation "BERTONE"
 
 ## Hardware
-- Longan Nano + CAN board
-- 2× 128×32 and 1x 64x32 OLED (I2C) 
+- Longan CANBED RP2040
+- 2× 128×32 and 1x 64x32 OLED (I2C)
 - Real car tested – 150+ km/h
 
 ```python
