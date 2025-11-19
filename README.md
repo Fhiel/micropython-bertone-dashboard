@@ -53,15 +53,16 @@ The project follows a clear, layered architecture to separate the application lo
 
 Dependencies primarily flow from top to bottom:
 
+```mermaid
 graph TD
     A[main.py] --> B(display_manager.py);
     B --> C(myfont.py);
     C --> D(font_<size>_data.py);
     A --> C;
     A --> E(ssd1306.py / machine.py);
+```
 
-
-1. main.py (The Main Controller)
+## 1. main.py (The Main Controller)
 
 Role: The application's entry point. Responsible for initializing the hardware (I2C, OLED displays), instantiating the custom fonts (MyFont), creating the shared data object, and starting the asynchronous main loop (asyncio).
 
@@ -69,7 +70,7 @@ Dependencies: Imports display_manager.py, myfont.py, and the low-level hardware 
 
 Core Task: Defines the MyFont instances and passes the initialized display objects to the display_manager. Starts the main asyncio tasks.
 
-2. display_manager.py (The Application Logic)
+## 2. display_manager.py (The Application Logic)
 
 Role: Contains all the high-level logic for displaying various telemetry data (Speed, RND, Temperatures). Manages the "Dirty Rect" optimization technique to update only the changed areas of the OLED buffers, significantly reducing display flicker.
 
@@ -77,7 +78,7 @@ Dependencies: Imports myfont.py for drawing the custom, large characters. Uses t
 
 Core Task: Translates the raw data from the shared_data object into formatted strings and calls the font.text() method to blit them onto the display.
 
-3. myfont.py (The Rendering Engine)
+## 3. myfont.py (The Rendering Engine)
 
 Role: Implements the core rendering logic for custom fonts on the SSD1306 display buffer. It handles the critical Vertical Byte Storage (VLSB) Shifting logic, which is necessary to correctly position fonts with heights that are not perfect multiples of 8 pixels (e.g., 21px). This complex logic ensures the font data is correctly split and shifted across multiple 8-pixel pages.
 
@@ -85,7 +86,7 @@ Dependencies: Imports the compiled font data (font_<size>_data.py).
 
 Core Task: The text() method calculates the Y_OFFSET and performs the necessary bit manipulations to write the VLSB data precisely into the display's framebuf buffer.
 
-4. font_converter.py (The Build Tool)
+## 4. font_converter.py (The Build Tool)
 
 Role: A separate utility script used exclusively for compiling the font data. It is not executed on the microcontroller hardware.
 
@@ -93,7 +94,7 @@ Dependencies: Imports the raw pixel data (raw_font.py).
 
 Core Task: Reads the raw pixel arrays, applies the VLSB conversion rule (packing vertical pixel columns into bytes), and saves the resulting, optimized binary data into static Python files (font_<size>_data.py).
 
-5. font_<size>_data.py (The Data Artifacts)
+## 5. font_<size>_data.py (The Data Artifacts)
 
 Role: Static Python files (e.g., font_large_data.py) that contain the pre-compiled VLSB byte arrays for every character supported by the font.
 
