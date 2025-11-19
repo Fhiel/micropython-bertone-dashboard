@@ -1,11 +1,19 @@
 ﻿# BERTONE X1/9e Electric Dashboard – MicroPython Zero-Flicker OLED
+ 
+[![MicroPython](https://img.shields.io/badge/MicroPython-v1.26.0-blue)](https://micropython.org)
+[![RP2040](https://img.shields.io/badge/RP2040-Longan_CANBed)](https://www.longan-labs.cc/can-bus/canbed.html)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Stars](https://img.shields.io/badge/Stars-42+-yellow?style=social)](https://github.com/Fhiel/micropython-bertone-dashboard/stargazers)
 
 **1983 BERTONE X1/9e – fully converted to electric drive**  
 Triple 128×32 SSD1306 OLED dashboard with pixel-perfect 12x16 and 16×21 font  
 Zero flicker thanks to dirty-rect + permanent subtext + async updates
 
+<img width="1251" height="348" alt="image" src="https://github.com/user-attachments/assets/956c06ec-2c5d-46c1-a789-592d22570d03" />
+
+
 ## Reason for this project
-The reason why I used micropython for this project was that all three OLED's with the same I2C Hardware adress worked out of the box with the standard 8x8 Font. Three OLED on I2C, one hardware and two software with a PP2040. A situation that wasn't possible with my first approach on Android. But this luck was the end of lightness.
+The reason why I used micropython for this project was that all three OLED's with the same I2C Hardware adress worked out of the box with the standard 8x8 Font. Three OLED on I2C, one hardware and two software with a RP2040. A situation that wasn't possible with my first approach on Android. But this luck was the end of lightness.
 
 ## Core Display Implementation Challenge
 The primary reason for the extended debugging process was a fundamental misunderstanding and incorrect implementation of the Vertical Byte Storage (VLSB) architecture used by the SSD1306 OLED controller.
@@ -38,6 +46,60 @@ The first legible character only appeared once the combination of the correct VL
 - Longan CANBED RP2040
 - 2× 128×32 and 1x 64x32 OLED (I2C)
 - Real car tested – 150+ km/h
+
+## Project Structure and Module Dependencies
+
+The project follows a clear, layered architecture to separate the application logic (Display Management) from the presentation (Font Rendering) and the necessary hardware connectivity.
+
+Dependencies primarily flow from top to bottom:
+
+graph TD
+    A[main.py] --> B(display_manager.py);
+    B --> C(myfont.py);
+    C --> D(font_<size>_data.py);
+    A --> C;
+    A --> E(ssd1306.py / machine.py);
+
+
+1. main.py (The Main Controller)
+
+Role: The application's entry point. Responsible for initializing the hardware (I2C, OLED displays), instantiating the custom fonts (MyFont), creating the shared data object, and starting the asynchronous main loop (asyncio).
+
+Dependencies: Imports display_manager.py, myfont.py, and the low-level hardware libraries (machine, ssd1306).
+
+Core Task: Defines the MyFont instances and passes the initialized display objects to the display_manager. Starts the main asyncio tasks.
+
+2. display_manager.py (The Application Logic)
+
+Role: Contains all the high-level logic for displaying various telemetry data (Speed, RND, Temperatures). Manages the "Dirty Rect" optimization technique to update only the changed areas of the OLED buffers, significantly reducing display flicker.
+
+Dependencies: Imports myfont.py for drawing the custom, large characters. Uses the global display objects (set in main.py) to update the screens.
+
+Core Task: Translates the raw data from the shared_data object into formatted strings and calls the font.text() method to blit them onto the display.
+
+3. myfont.py (The Rendering Engine)
+
+Role: Implements the core rendering logic for custom fonts on the SSD1306 display buffer. It handles the critical Vertical Byte Storage (VLSB) Shifting logic, which is necessary to correctly position fonts with heights that are not perfect multiples of 8 pixels (e.g., 21px). This complex logic ensures the font data is correctly split and shifted across multiple 8-pixel pages.
+
+Dependencies: Imports the compiled font data (font_<size>_data.py).
+
+Core Task: The text() method calculates the Y_OFFSET and performs the necessary bit manipulations to write the VLSB data precisely into the display's framebuf buffer.
+
+4. font_converter.py (The Build Tool)
+
+Role: A separate utility script used exclusively for compiling the font data. It is not executed on the microcontroller hardware.
+
+Dependencies: Imports the raw pixel data (raw_font.py).
+
+Core Task: Reads the raw pixel arrays, applies the VLSB conversion rule (packing vertical pixel columns into bytes), and saves the resulting, optimized binary data into static Python files (font_<size>_data.py).
+
+5. font_<size>_data.py (The Data Artifacts)
+
+Role: Static Python files (e.g., font_large_data.py) that contain the pre-compiled VLSB byte arrays for every character supported by the font.
+
+Dependencies: None (They are imported by myfont.py).
+
+Core Task: Provide the optimized binary data that myfont.py uses to quickly transfer the character shapes to the display buffer for rendering.
 
 ```python
 from display_manager import update_odometer_display, update_central_display, update_rnd_display
