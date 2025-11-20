@@ -47,17 +47,13 @@ class SSD1306(framebuf.FrameBuffer):
             # resolution and layout
             SET_DISP_START_LINE,          # start at line 0
             
-            # === DIE BEIDEN ZEILEN ÄNDERN ===
-            0xA0,                         # Statt: SET_SEG_REMAP | 0x01   → jetzt 0xA0
-            # SET_SEG_REMAP | 0x01,       # <-- alte Zeile löschen/auskommentieren
+            0xA0,                         # Changed: SET_SEG_REMAP | 0x01   → to 0xA0
             
             SET_MUX_RATIO,
             self.height - 1,
             
-            0xC0,                         # Statt: SET_COM_OUT_DIR | 0x08 → jetzt 0xC8
-            # SET_COM_OUT_DIR | 0x08,     # <-- alte Zeile löschen/auskommentieren
+            0xC0,                         # Changed: SET_COM_OUT_DIR | 0x08 → to 0xC8
             
-            # === Ende der Änderungen ===
             
             SET_DISP_OFFSET,
             0x00,

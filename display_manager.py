@@ -11,8 +11,8 @@ central = None
 rnd = None
 odometer = None
 
-# font_small = MyFont('small')  # 12x16 Pixel : Zuweisung erfolgt in main
-# font_large = MyFont('large')  # 16x21 Pixel : Zuweisung erfolgt in main
+# font_small = MyFont('small') # 12x16 Pixel: Assignment happens in main
+# font_large = MyFont('large') # 16x21 Pixel: Assignment happens in main
 
 # --- Display Dimensions ---
 central_width = 128
@@ -62,7 +62,7 @@ async def update_odometer_display(shared_data):
     speed_str = f"{shared_data.digital_speed:>3}"
     km_str = f"{int(shared_data.total_km):06d}"
     
-    # NEUE Y-KOORDINATE für 21px hohe Fonts: (32 - 21) // 2 = 5
+    # NEW Y-COORDINATE for 21px high fonts: (32 - 21) // 2 = 5
     Y_LARGE_FONT = 5
     
     # --- 3. Mode handling ---
@@ -71,7 +71,7 @@ async def update_odometer_display(shared_data):
     dirty_x0, dirty_y0 = 128, 32  # Start with invalid rect
     dirty_x1, dirty_y1 = 0, 0
     
-    # Flag, ob ein vollständiger Redraw (Mode/Contrast Change) nötig ist
+    # Flag indicating whether a full redraw (Mode/Contrast Change) is necessary
     full_redraw_needed = False 
 
     # Force full redraw on mode change
@@ -79,25 +79,25 @@ async def update_odometer_display(shared_data):
         shared_data.odo_dirty_flag = True
         shared_data.last_displayed_mode = mode
 
-    # KORREKTUR für Überschneidungen: Bei Modus- oder Kontrastwechsel (dirty_flag=True) 
-    # MUSS der gesamte Bildschirm gelöscht werden.
+    # CORRECTION for overlaps: On mode or contrast change (dirty_flag=True) 
+    # the entire screen MUST be cleared.
     if shared_data.odo_dirty_flag:
-        odometer.fill(0) # Vollständiges Löschen des Buffers (128x32)
+        odometer.fill(0) # Full buffer clear (128x32)
         full_redraw_needed = True
         shared_data.debug_print("Odometer: Full buffer clear due to mode/contrast change.", level=2)
 
     try:
-        # Modes, die auf 16x21 umgestellt werden sollen
+        # Modes that use the 16x21 font
         if mode == DISPLAY_MODE_SPEED:
             X_SPEED_START = 44
             
-            # Prüfe, ob neu gezeichnet werden muss (wegen Full Redraw ODER Textänderung)
+            # Check if redrawing is necessary (due to Full Redraw OR text change)
             if full_redraw_needed or speed_str != shared_data.last_displayed_speed_str:
                 char_changed = True
                 
-                # Wenn KEIN Full Redraw stattfand (nur Textänderung), müssen wir den alten Text löschen.
+                # If NO Full Redraw occurred (only text change), we must clear the old text.
                 if not full_redraw_needed:
-                    # Nur Textänderung innerhalb des gleichen Modus: partielles Löschen
+                    # Only text change within the same mode: partial clearing
                     odometer.fill_rect(X_SPEED_START, Y_LARGE_FONT, 128 - X_SPEED_START, 21, 0)
                     odometer.fill_rect(97, 19, 8 * 4, 8, 0) # Clear unit km/h
                     
@@ -106,7 +106,7 @@ async def update_odometer_display(shared_data):
                 
                 shared_data.last_displayed_speed_str = speed_str
                 
-                # Dirty rect für partielles Update, falls nur Text geändert wurde
+                # Dirty rect for partial update, if only text changed
                 dirty_x0, dirty_x1 = X_SPEED_START, 127 
                 dirty_y0, dirty_y1 = Y_LARGE_FONT, 31 
                 
@@ -116,14 +116,14 @@ async def update_odometer_display(shared_data):
                 char_changed = True
                 
                 if not full_redraw_needed:
-                    # Nur Textänderung innerhalb des gleichen Modus: partielles Löschen
+                    # Only text change within the same mode: partial clearing
                     odometer.fill_rect(0, Y_LARGE_FONT, 128, 21, 0) # Clear large font area
                     odometer.fill_rect(97, 19, 8 * 2, 8, 0) # Clear unit km
                 
-                # NEU: 16x21 Font für Total-KM (6 Zeichen * 16px/Zeichen = 96px Breite)
+                # NEW: 16x21 font for Total-KM (6 characters * 16px/char = 96px width)
                 font_large.text(km_str, X_TOTAL_START, Y_LARGE_FONT, 1, display=odometer)
                 
-                # KORREKTUR: Standard 8x8 Font für die Einheit
+                # CORRECTION: Standard 8x8 font for the unit
                 odometer.text("km", 100, 19)
                 
                 shared_data.last_displayed_km_str = km_str
@@ -140,7 +140,7 @@ async def update_odometer_display(shared_data):
                 char_changed = True
                 
                 if not full_redraw_needed:
-                    # Nur Textänderung innerhalb des gleichen Modus: partielles Löschen
+                    # Only text change within the same mode: partial clearing
                     odometer.fill_rect(X_TRIP_START, Y_LARGE_FONT, 128 - X_TRIP_START, 21, 0)
                     odometer.fill_rect(97, 19, 8 * 2, 8, 0) # Clear unit km
                 
@@ -162,7 +162,7 @@ async def update_odometer_display(shared_data):
                 if not full_redraw_needed:
                     odometer.fill_rect(0, 8, 128, 16, 0) # Clear middle-Zone (Small Font Area)
                 
-                # NEU: Standardaufruf mit der SMALL Font
+                # NEW: Standard call with the SMALL font
                 font_small.text(temp_source_str, 40, 8, 1, display=odometer)
                 
                 shared_data.last_displayed_temp_source = shared_data.temp_show
@@ -174,21 +174,21 @@ async def update_odometer_display(shared_data):
         if full_redraw_needed or char_changed:
             try:
                 if full_redraw_needed:
-                    # Full screen redraw (z.B. Kontrast- oder Modus-Wechsel)
+                    # Full screen redraw (e.g. contrast or mode change)
                     odometer.show()
                     shared_data.debug_print("Odometer: full screen update (mode/contrast)", level=2)
                 else:
-                    # Nur den betroffenen Textbereich aktualisieren (innerhalb des Modus)
-                    # Sicherstellen, dass die Koordinaten gültig sind (Dirty Rect wird nur bei char_changed verwendet)
+                    # Only update the affected text area (within the mode)
+                    # Ensure coordinates are valid (Dirty Rect is only used when char_changed)
                     if dirty_x0 < dirty_x1 and dirty_y0 < dirty_y1:
                         odometer.show(dirty_x0, dirty_y0, dirty_x1, dirty_y1)
                         shared_data.debug_print(f"Odometer: dirty rect ({dirty_x0},{dirty_y0},{dirty_x1},{dirty_y1})", level=3)
                     else:
-                         # Fallback bei ungültigem Dirty Rect (sollte nicht passieren)
-                         odometer.show() 
-                         shared_data.debug_print("Odometer: dirty rect fallback to full show", level=3)
+                        # Fallback for invalid Dirty Rect (should not happen)
+                        odometer.show() 
+                        shared_data.debug_print("Odometer: dirty rect fallback to full show", level=3)
 
-                shared_data.odo_dirty_flag = False # Setze Flag auf False nach erfolgreichem Show
+                shared_data.odo_dirty_flag = False # Set flag to False after successful show
             except OSError as e:
                 shared_data.debug_print(f"ERROR: I2C error in odometer.show(): {e}", level=0)
                 odometer = None
@@ -201,7 +201,7 @@ async def update_central_display(shared_data):
     """
     Update the Central display (128x32) with motor temp, MCU temp, and ISO-R.
     Subtext ("MOTOR", "MCU", "ISO-R") is drawn once and preserved.
-    Only the top row (y=0–15) is updated → no flicker.
+    Only the top row (y=0–15) is updated -> no flicker.
     """
     global central, _subtext_drawn
     if central is None:
@@ -236,11 +236,9 @@ async def update_central_display(shared_data):
         return
 
     # --- NORMAL DISPLAY ---
-    # Da wir rnd.invert() für RND entfernt haben, stellen wir sicher, dass Central 
-    # nicht versehentlich invertiert wurde (sollte es aber eh nicht).
+    # If an inversion feature for Central is added in the future, 
+    # call invert(0) here if necessary. Currently: only tracking.
     if shared_data.central_last_invert_state != 0:
-        # Falls in Zukunft ein Invertierungs-Feature für Central hinzukommt, 
-        # hier ggf. invert(0) aufrufen. Aktuell: nur Tracking.
         pass
 
     # --- Draw permanent subtext once (bottom row) ---
@@ -308,20 +306,20 @@ async def update_rnd_display(shared_data):
     if rnd is None:
         return
 
-    # --- Geometrie für 64x32 Display ---
-    # Gewünschte Box-Größe: 20x29 Pixel (enthält den 16x21 Font + 2px/4px Rand)
+    # --- Geometry for 64x32 Display ---
+    # Desired box size: 20x29 pixels (contains the 16x21 font + 2px/4px margin)
     RND_BOX_WIDTH = 20
     RND_BOX_HEIGHT = 29
     
-    # Box-Startkoordinaten (zentriert in 64x32)
+    # Box start coordinates (centered in 64x32)
     X_BOX_START = (rnd_width - RND_BOX_WIDTH) // 2 # (64 - 20) / 2 = 22
-    Y_BOX_START = (rnd_height - RND_BOX_HEIGHT) // 2 # (32 - 29) / 2 = 1 (oder 2, wir nehmen 1 für die Mitte)
+    Y_BOX_START = (rnd_height - RND_BOX_HEIGHT) // 2 # (32 - 29) / 2 = 1 (or 2, we take 1 for the center)
     
-    # Text-Startkoordinaten (zentriert in der Box)
+    # Text start coordinates (centered in the box)
     X_TEXT_START = X_BOX_START + (RND_BOX_WIDTH - 16) // 2 # 22 + 2 = 24
-    Y_TEXT_START = Y_BOX_START + (RND_BOX_HEIGHT - 21) // 2 # 1 + 4 = 5 (Perfekte Mitte)
+    Y_TEXT_START = Y_BOX_START + (RND_BOX_HEIGHT - 21) // 2 # 1 + 4 = 5 (Perfect center)
     
-    # Dirty Rect Endkoordinaten (entspricht Box-Größe)
+    # Dirty Rect End coordinates (corresponds to box size)
     X_BOX_END = X_BOX_START + RND_BOX_WIDTH - 1 # 22 + 20 - 1 = 41
     Y_BOX_END = Y_BOX_START + RND_BOX_HEIGHT - 1 # 1 + 29 - 1 = 29
     
@@ -335,41 +333,41 @@ async def update_rnd_display(shared_data):
     motor_data_valid = shared_data.internal_telemetry_data.get('motorDataValid', False)
     rnd_char = shared_data.current_rnd_status_char if motor_data_valid else ' '
 
-    # --- 3. Determine colors and inversion style (Manuelle Inversion) ---
+    # --- 3. Determine colors and inversion style (Manual Inversion) ---
     invert_state = 1 if rnd_char == 'R' else 0
     
     if rnd_char == 'R':
-        # Reverse Mode: Invertiert (Schwarzer Text auf Weißem Feld)
-        char_fg_color = 0 # Text ist Schwarz
-        char_bg_color = 1 # Box ist Weiß
+        # Reverse Mode: Inverted (Black text on White field)
+        char_fg_color = 0 # Text is Black
+        char_bg_color = 1 # Box is White
     else:
-        # Normal Mode: Normal (Weißer Text auf Schwarzem Feld)
-        char_fg_color = 1 # Text ist Weiß
-        char_bg_color = 0 # Box ist Schwarz (passend zum Display-Hintergrund)
+        # Normal Mode: Normal (White text on Black field)
+        char_fg_color = 1 # Text is White
+        char_bg_color = 0 # Box is Black (matching the display background)
         
-    # Prüfen, ob der Stil (R <-> N/D) gewechselt hat, um einen Redraw zu erzwingen
+    # Check if the style (R <-> N/D) has changed to force a redraw
     invert_changed = (shared_data.rnd_last_invert_state != invert_state)
     if invert_changed:
         shared_data.rnd_last_invert_state = invert_state
-        shared_data.rnd_dirty_flag = True # Erzwinge Redraw aufgrund des Stilwechsels
+        shared_data.rnd_dirty_flag = True # Force redraw due to style change
 
     # --- 4. Update only if character or style changed ---
     char_changed = (rnd_char != shared_data.rnd_last_displayed_char)
 
     if char_changed or shared_data.rnd_dirty_flag:
         
-        # 1. Fülle den Bereich mit der berechneten Hintergrundfarbe (0 oder 1)
-        # Nutze die neuen Box-Koordinaten und -Größen
+        # 1. Fill the area with the calculated background color (0 or 1)
+        # Use the new box coordinates and dimensions
         rnd.fill_rect(X_BOX_START, Y_BOX_START, RND_BOX_WIDTH, RND_BOX_HEIGHT, char_bg_color)
         
-        # 2. Zeichne den Text mit der berechneten Vordergrundfarbe (1 oder 0)
-        # Nutze die neuen, zentrierten Text-Koordinaten
+        # 2. Draw the text with the calculated foreground color (1 or 0)
+        # Use the new, centered text coordinates
         font_large.text(rnd_char, X_TEXT_START, Y_TEXT_START, char_fg_color, display=rnd) 
         
         shared_data.rnd_last_displayed_char = rnd_char
         shared_data.rnd_dirty_flag = False
 
-        # Zeige nur den 20x29 Box-Bereich (Dirty Rect)
+        # Show only the 20x29 box area (Dirty Rect)
         try:
             rnd.show(X_BOX_START, Y_BOX_START, X_BOX_END, Y_BOX_END)
             shared_data.debug_print("RND: gear updated (dirty rect, 20x29 box)", level=2)
